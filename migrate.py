@@ -9,8 +9,6 @@ import os
 import sys
 import shutil
 from pathlib import Path
-from typing import List, Dict, Optional
-import json
 
 # 配置常量
 OLD_PUBLISHER_ID = "5-S2-1-11831282"  # 旧发布者 ID
@@ -18,20 +16,20 @@ NEW_PUBLISHER_ID = "5-S2-1-10786818"  # 新发布者 ID
 
 # 需要迁移的存档文件列表
 BANK_FILES = [
-    "CrashRPGMaximum.SC2Bank",  # 紧急迫降 RPG
-    "HSF.SC2Bank",              # 地狱特种部队
-    "PBRPG.SC2Bank",            # 破灵者 RPG
-    "CDRPG.SC2Bank",            # 十死无生 RPG
-    "NeoStarBank.SC2Bank",      # 新星防卫 RPG
-    "NeoStarLadder.SC2Bank",    # 新星防卫 RPG 排行榜
+    "CrashRPGMaximumBank.SC2Bank",  # 紧急迫降 RPG
+    "HSF.SC2Bank",                  # 地狱特种部队
+    "PBRPG.SC2Bank",                # 破灵者 RPG
+    "CDRPGBank.SC2Bank",            # 十死无生 RPG
+    "NeoStarBank.SC2Bank",          # 新星防卫 RPG
+    "NeoStarLadder.SC2Bank",        # 新星防卫 RPG 排行榜
 ]
 
 # 地图名称映射
 BANK_NAMES = {
-    "CrashRPGMaximum.SC2Bank": "紧急迫降 RPG",
+    "CrashRPGMaximumBank.SC2Bank": "紧急迫降 RPG",
     "HSF.SC2Bank": "地狱特种部队",
     "PBRPG.SC2Bank": "破灵者 RPG",
-    "CDRPG.SC2Bank": "十死无生 RPG",
+    "CDRPGBank.SC2Bank": "十死无生 RPG",
     "NeoStarBank.SC2Bank": "新星防卫 RPG",
     "NeoStarLadder.SC2Bank": "新星防卫 RPG 排行榜",
 }
@@ -41,12 +39,12 @@ class Account:
     """代表一个星际争霸 II 账号"""
     
     def __init__(self, account_path: Path, battle_net_id: str, handle: str):
-        self.path = account_path
-        self.battle_net_id = battle_net_id
-        self.handle = handle
-        self.display_name = None  # 将从快捷方式反推
-        self.old_bank_path = account_path / "Banks" / OLD_PUBLISHER_ID
-        self.new_bank_path = account_path / "Banks" / NEW_PUBLISHER_ID
+        self.path: Path = account_path
+        self.battle_net_id: str = battle_net_id
+        self.handle: str = handle
+        self.display_name: str | None = None  # 将从快捷方式反推
+        self.old_bank_path: Path = account_path / "Banks" / OLD_PUBLISHER_ID
+        self.new_bank_path: Path = account_path / "Banks" / NEW_PUBLISHER_ID
     
     def has_old_banks(self) -> bool:
         """检查是否有旧的存档文件"""
@@ -58,9 +56,9 @@ class Account:
                 return True
         return False
     
-    def get_migratable_files(self) -> List[str]:
+    def get_migratable_files(self) -> list[str]:
         """获取可迁移的存档文件列表"""
-        files = []
+        files: list[str] = []
         if not self.old_bank_path.exists():
             return files
         
@@ -69,9 +67,9 @@ class Account:
                 files.append(bank_file)
         return files
     
-    def get_existing_target_files(self) -> List[str]:
+    def get_existing_target_files(self) -> list[str]:
         """获取目标位置已存在的存档文件列表"""
-        files = []
+        files: list[str] = []
         if not self.new_bank_path.exists():
             return files
         
@@ -93,7 +91,7 @@ def get_sc2_documents_path() -> Path:
     return sc2_path
 
 
-def find_display_name_from_shortcuts(sc2_path: Path, handle: str) -> Optional[str]:
+def find_display_name_from_shortcuts(sc2_path: Path, handle: str) -> str | None:
     """从快捷方式反推显示名称"""
     # 遍历 StarCraft II 根目录下的所有 .lnk 文件
     for item in sc2_path.iterdir():
@@ -109,11 +107,11 @@ def find_display_name_from_shortcuts(sc2_path: Path, handle: str) -> Optional[st
     return None
 
 
-def scan_accounts() -> List[Account]:
+def scan_accounts() -> list[Account]:
     """扫描所有国服账号"""
     sc2_path = get_sc2_documents_path()
     accounts_path = sc2_path / "Accounts"
-    accounts = []
+    accounts: list[Account] = []
     
     print("正在扫描国服账号...")
     print(f"扫描路径: {accounts_path}\n")
@@ -149,23 +147,24 @@ def scan_accounts() -> List[Account]:
     return accounts
 
 
-def resolve_shortcut(shortcut_path: Path) -> Optional[Path]:
+def resolve_shortcut(shortcut_path: Path) -> Path | None:
     """解析 Windows 快捷方式"""
     try:
-        import win32com.client
-        shell = win32com.client.Dispatch("WScript.Shell")
-        shortcut = shell.CreateShortCut(str(shortcut_path))
-        target = shortcut.Targetpath
+        import win32com.client  # type: ignore[import-untyped]
+        # pywin32 的类型定义不完整，使用 Any 类型避免类型检查警告
+        shell = win32com.client.Dispatch("WScript.Shell")  # type: ignore[assignment, any-type]
+        shortcut = shell.CreateShortCut(str(shortcut_path))  # type: ignore[union-attr, any-type]
+        target: str | None = getattr(shortcut, "Targetpath", None)  # type: ignore[arg-type, union-attr]
         return Path(target) if target else None
     except ImportError:
         # pywin32 未安装，跳过快捷方式解析
         return None
-    except Exception as e:
+    except Exception:
         # 解析失败，跳过
         return None
 
 
-def display_accounts(accounts: List[Account]) -> None:
+def display_accounts(accounts: list[Account]) -> None:
     """显示找到的账号"""
     print(f"找到 {len(accounts)} 个需要迁移的账号:\n")
     
@@ -185,7 +184,7 @@ def display_accounts(accounts: List[Account]) -> None:
     print()
 
 
-def select_account(accounts: List[Account]) -> Optional[Account]:
+def select_account(accounts: list[Account]) -> Account | None:
     """让用户选择要迁移的账号"""
     while True:
         try:
@@ -212,7 +211,7 @@ def create_backup(file_path: Path) -> Path:
     while True:
         backup_path = file_path.parent / f"{file_path.name}.bak{backup_num}"
         if not backup_path.exists():
-            shutil.copy2(file_path, backup_path)
+            _ = shutil.copy2(file_path, backup_path)
             return backup_path
         backup_num += 1
 
@@ -273,7 +272,7 @@ def migrate_account(account: Account) -> bool:
                 backup_count += 1
             
             # 复制文件
-            shutil.copy2(source, target)
+            _ = shutil.copy2(source, target)
             print(f"  迁移: {bank_file} ({BANK_NAMES.get(bank_file, '未知地图')})")
             migrated_count += 1
             
@@ -333,7 +332,7 @@ def main():
     else:
         print("未选择账号，退出。")
     
-    input("\n按回车键退出...")
+    _ = input("\n按回车键退出...")
 
 
 if __name__ == "__main__":
@@ -346,5 +345,5 @@ if __name__ == "__main__":
         print(f"\n发生错误: {e}")
         import traceback
         traceback.print_exc()
-        input("\n按回车键退出...")
+        _ = input("\n按回车键退出...")
         sys.exit(1)

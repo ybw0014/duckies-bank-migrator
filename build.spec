@@ -6,7 +6,7 @@ a = Analysis(
     ['migrate.py'],
     pathex=[],
     binaries=[],
-    datas=[('config.json', '.')],
+    datas=[],
     hiddenimports=[
         'win32com.client',
         'win32com.gen_py',
