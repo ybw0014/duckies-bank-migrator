@@ -150,11 +150,11 @@ def scan_accounts() -> list[Account]:
 def resolve_shortcut(shortcut_path: Path) -> Path | None:
     """解析 Windows 快捷方式"""
     try:
-        import win32com.client  # type: ignore[import-untyped]
+        import win32com.client  # pyright: ignore[reportMissingModuleSource]
         # pywin32 的类型定义不完整，使用 Any 类型避免类型检查警告
-        shell = win32com.client.Dispatch("WScript.Shell")  # type: ignore[assignment, any-type]
-        shortcut = shell.CreateShortCut(str(shortcut_path))  # type: ignore[union-attr, any-type]
-        target: str | None = getattr(shortcut, "Targetpath", None)  # type: ignore[arg-type, union-attr]
+        shell = win32com.client.Dispatch("WScript.Shell")
+        shortcut = shell.CreateShortCut(str(shortcut_path))
+        target: str | None = getattr(shortcut, "Targetpath", None)
         return Path(target) if target else None
     except ImportError:
         # pywin32 未安装，跳过快捷方式解析
