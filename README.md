@@ -1,38 +1,31 @@
 # DuckyTheDuck 地图存档迁移工具
 
-自动迁移 DuckyTheDuck 系列地图的存档文件。
+由于地图发布者更改，以下地图需要进行存档迁移才能继续使用现有存档游玩：
 
-## 支持的地图
+- 紧急迫降 RPG
+- 地狱特种部队
+- 破灵者 RPG
+- 十死无生 RPG
+- 新星防卫 RPG
 
-- 紧急迫降 RPG (CrashRPGMaximum.SC2Bank)
-- 地狱特种部队 (HSF.SC2Bank)
-- 破灵者 RPG (PBRPG.SC2Bank)
-- 十死无生 RPG (CDRPG.SC2Bank)
-- 新星防卫 RPG (NeoStarBank.SC2Bank, NeoStarLadder.SC2Bank)
+本工具可以帮助您快速完成存档迁移。
 
-## 系统要求
+## 为什么需要迁移？
 
-- Windows 操作系统
-- Python 3.7+
-- 星际争霸 II
-
-## 安装
-
-```bash
-pip install -r requirements.txt
-```
+这些地图的发布者账号发生了更改，游戏会将存档保存在不同的文件夹中。为了在新地图中继续使用您的游戏进度，需要将存档文件从旧的发布者文件夹复制到新的发布者文件夹。
 
 ## 使用方法
 
-### 方式一：下载可执行文件（推荐）
+### 推荐方式：下载可执行文件
 
 1. 前往 [Releases](../../releases) 页面
 2. 下载最新的 `duckies-bank-migrator.exe`
-3. 双击运行，无需安装 Python
+3. 双击运行（无需安装 Python 或其他软件）
+4. 按照提示选择要迁移的账号即可
 
-### 方式二：从源码运行
+### 替代方式：从源码运行
 
-运行脚本：
+如果您熟悉 Python，也可以直接运行源码：
 
 ```bash
 # 安装依赖
@@ -42,57 +35,13 @@ pip install -r requirements.txt
 python migrate.py
 ```
 
-脚本将自动：
-1. 扫描所有国服账号（以 @5 结尾的快捷方式）
-2. 检查哪些账号需要迁移
-3. 显示账号信息（handle 和名称）
-4. 让用户选择要迁移的账号
-5. 列出可迁移的存档文件
-6. 检查目标位置是否已有存档
-7. 如果需要，创建备份（.bak1, .bak2, ...）
-8. 执行迁移
+## 常见问题
 
-## 迁移说明
+**Q: 迁移后原来的存档会被删除吗？**  
+A: 不会。工具只会复制存档文件，不会删除任何原有数据。
 
-脚本会将存档从旧的发布者文件夹迁移到新的发布者文件夹：
-- 源文件夹：`5-S2-1-11831282`
-- 目标文件夹：`5-S2-1-10786818`
+**Q: 如果目标位置已经有存档怎么办？**  
+A: 工具会自动创建备份文件（如 `NeoStarBank.SC2Bank.bak1`），然后再进行覆盖。
 
-## 备份
-
-如果目标位置已存在存档文件，脚本会自动创建备份：
-- 第一个备份：`文件名.SC2Bank.bak1`
-- 第二个备份：`文件名.SC2Bank.bak2`
-- 以此类推...
-
-## 许可证
-
-MIT License
-
-## 开发
-
-### 本地构建
-
-```bash
-# 安装构建依赖
-pip install pyinstaller
-
-# 使用 spec 文件构建
-pyinstaller build.spec
-
-# 或使用命令行构建
-pyinstaller --onefile --name duckies-bank-migrator --console migrate.py
-```
-
-### 自动构建
-
-每次推送到主分支时，GitHub Actions 会自动：
-1. 使用 PyInstaller 构建 Windows 可执行文件
-2. 创建一个以 commit hash 为标签的 pre-release
-3. 将 `duckies-bank-migrator.exe` 上传到 release
-
-创建正式版本：
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
+**Q: 我有多个账号，需要都迁移吗？**  
+A: 工具会列出所有需要迁移的账号，您可以选择需要迁移的账号。
