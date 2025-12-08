@@ -9,6 +9,7 @@ import os
 import sys
 import shutil
 from pathlib import Path
+from sc2bank import sc2bank
 
 # 配置常量
 OLD_PUBLISHER_ID = "5-S2-1-11831282"  # 旧发布者 ID
@@ -21,7 +22,6 @@ BANK_FILES = [
     "PBRPG.SC2Bank",                # 破灵者 RPG
     "CDRPGBank.SC2Bank",            # 十死无生 RPG
     "NeoStarBank.SC2Bank",          # 新星防卫 RPG
-    "NeoStarLadder.SC2Bank",        # 新星防卫 RPG 排行榜
 ]
 
 # 地图名称映射
@@ -31,7 +31,6 @@ BANK_NAMES = {
     "PBRPG.SC2Bank": "破灵者 RPG",
     "CDRPGBank.SC2Bank": "十死无生 RPG",
     "NeoStarBank.SC2Bank": "新星防卫 RPG",
-    "NeoStarLadder.SC2Bank": "新星防卫 RPG 排行榜",
 }
 
 
@@ -216,6 +215,59 @@ def create_backup(file_path: Path) -> Path:
         backup_num += 1
 
 
+def resign_bank_file(bank_file_path: Path, user_id: str) -> bool:
+    """
+    重新生成 SC2Bank 文件的签名
+    
+    Args:
+        bank_file_path: SC2Bank 文件路径
+        user_id: 用户 ID (例如: "5-S2-1-10786818")
+    
+    Returns:
+        bool: 签名是否成功生成
+    """
+    try:
+        # 使用新发布者 ID 作为 author_id
+        author_id = NEW_PUBLISHER_ID
+        
+        # 获取 bank 名称 (文件名不含扩展名)
+        bank_name = bank_file_path.stem
+        
+        # 解析 bank 文件
+        bank, old_signature = sc2bank.parse(str(bank_file_path))
+        
+        # 生成新签名
+        new_signature = sc2bank.sign(author_id, user_id, bank_name, bank)
+        
+        # 读取文件内容
+        with open(bank_file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # 替换签名
+        if old_signature and old_signature in content:
+            # 替换旧签名
+            new_content = content.replace(old_signature, new_signature)
+        else:
+            # 如果没有旧签名，添加新签名
+            # 在 </Bank> 标签前插入签名
+            if '</Bank>' in content:
+                signature_tag = f'    <Signature value="{new_signature}"/>\n</Bank>'
+                new_content = content.replace('</Bank>', signature_tag)
+            else:
+                print(f"  警告: 无法为 {bank_file_path.name} 添加签名 (文件格式错误)")
+                return False
+        
+        # 写回文件
+        with open(bank_file_path, 'w', encoding='utf-8') as f:
+            _ = f.write(new_content)
+        
+        return True
+        
+    except Exception as e:
+        print(f"  警告: 为 {bank_file_path.name} 生成签名时出错: {e}")
+        return False
+
+
 def migrate_account(account: Account) -> bool:
     """迁移账号的存档"""
     print(f"\n{'='*60}")
@@ -259,6 +311,7 @@ def migrate_account(account: Account) -> bool:
     print("\n开始迁移...")
     migrated_count = 0
     backup_count = 0
+    resign_count = 0
     
     for bank_file in source_files:
         source = account.old_bank_path / bank_file
@@ -275,6 +328,10 @@ def migrate_account(account: Account) -> bool:
             _ = shutil.copy2(source, target)
             print(f"  迁移: {bank_file} ({BANK_NAMES.get(bank_file, '未知地图')})")
             migrated_count += 1
+            
+            # 重新生成签名
+            if resign_bank_file(target, account.handle):
+                resign_count += 1
             
         except Exception as e:
             print(f"  错误: 迁移 {bank_file} 失败: {e}")
@@ -312,7 +369,7 @@ def main():
         print("  2. 没有符合条件的国服账号 (handle 以 5-S2-1 开头)")
         print("  3. 旧存档文件夹中没有需要迁移的存档文件")
         print(f"  4. Accounts 文件夹不存在或为空")
-        input("\n按回车键退出...")
+        _ = input("\n按回车键退出...")
         return
     
     # 显示账号列表
