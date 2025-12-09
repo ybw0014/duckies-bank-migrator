@@ -30,30 +30,37 @@ jobs:
     
     - name: Build executable with PyInstaller
       run: |
-        pyinstaller --onefile --name duckies-bank-migrator --icon=NONE --console migrate.py
+        pyinstaller build.spec
     
     - name: Get commit hash
       id: commit
       run: |
         echo "sha_short=$(git rev-parse --short HEAD)" >> $env:GITHUB_OUTPUT
     
+    - name: Rename executable with git hash
+      run: |
+        $hash = "${{ steps.commit.outputs.sha_short }}"
+        Rename-Item -Path "dist\duckies-bank-migrator.exe" -NewName "DuckyTheDuck 地图存档迁移工具 (git $hash).exe"
+    
     - name: Create Release
       id: create_release
       uses: softprops/action-gh-release@v2
       with:
         tag_name: build-${{ steps.commit.outputs.sha_short }}
-        name: Build ${{ steps.commit.outputs.sha_short }}
+        name: 开发版本 ${{ steps.commit.outputs.sha_short }}
         draft: false
         prerelease: true
         files: |
-          dist/duckies-bank-migrator.exe
+          dist/DuckyTheDuck 地图存档迁移工具 (git ${{ steps.commit.outputs.sha_short }}).exe
         body: |
-          Automated build from commit ${{ github.sha }}
+          ## DuckyTheDuck 地图存档迁移工具 - 开发版本
           
-          ## Changes
+          自动构建自提交 ${{ github.sha }}
+          
+          ### 更新内容
           ${{ github.event.head_commit.message }}
           
-          ## Usage
-          Download `duckies-bank-migrator.exe` and run it on Windows.
+          ### 使用方法
+          下载 `DuckyTheDuck 地图存档迁移工具 (git ${{ steps.commit.outputs.sha_short }}).exe` 并在 Windows 上运行。
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

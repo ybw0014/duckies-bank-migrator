@@ -1,2 +1,8 @@
-colorama>=0.4.6
+# DuckyTheDuck 地图存档迁移工具 - 依赖包
+
+# SC2Bank 签名工具 (必需)
 sc2bank>=0.3
+
+# PyQt6 GUI 框架 (必需)
+PyQt6>=6.6.0
+

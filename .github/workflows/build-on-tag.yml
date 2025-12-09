@@ -29,7 +29,18 @@ jobs:
     
     - name: Build executable with PyInstaller
       run: |
-        pyinstaller --onefile --name duckies-bank-migrator --icon=NONE --console migrate.py
+        pyinstaller build.spec
+    
+    - name: Extract version from tag
+      id: version
+      run: |
+        $version = "${{ github.ref_name }}" -replace '^v', ''
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+    
+    - name: Rename executable with version
+      run: |
+        $version = "${{ steps.version.outputs.version }}"
+        Rename-Item -Path "dist\duckies-bank-migrator.exe" -NewName "DuckyTheDuck 地图存档迁移工具 v$version.exe"
     
     - name: Create Release
       uses: softprops/action-gh-release@v2
@@ -37,20 +48,11 @@ jobs:
         draft: false
         prerelease: false
         files: |
-          dist/duckies-bank-migrator.exe
+          dist/DuckyTheDuck 地图存档迁移工具 v${{ steps.version.outputs.version }}.exe
         body: |
-          Release ${{ github.ref_name }}
+          ## DuckyTheDuck 地图存档迁移工具 ${{ github.ref_name }}
           
-          ## Usage
-          Download `duckies-bank-migrator.exe` and run it on Windows.
-          
-          ## Installation
-          1. Download the executable
-          2. Run it directly - no Python installation required
-          
-          ## Features
-          - Automatic scanning of StarCraft II accounts
-          - Smart backup system
-          - Easy-to-use interface
+          ### 使用方法
+          下载 `DuckyTheDuck 地图存档迁移工具 v${{ steps.version.outputs.version }}.exe` 并在 Windows 上运行。
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
