@@ -1,13 +1,2 @@
-# DuckyTheDuck 地图存档迁移工具 - 依赖包
-
-# Windows 快捷方式解析 (必需)
-pywin32>=305
-
-# 用于更好的控制台输出 (可选)
 colorama>=0.4.6
-
-# SC2Bank 签名工具 (必需)
 sc2bank>=0.3
-
-# 构建工具 (仅用于开发)
-# pyinstaller>=6.0.0

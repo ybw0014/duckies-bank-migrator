@@ -41,7 +41,6 @@ class Account:
         self.path: Path = account_path
         self.battle_net_id: str = battle_net_id
         self.handle: str = handle
-        self.display_name: str | None = None  # 将从快捷方式反推
         self.old_bank_path: Path = account_path / "Banks" / OLD_PUBLISHER_ID
         self.new_bank_path: Path = account_path / "Banks" / NEW_PUBLISHER_ID
     
@@ -90,22 +89,6 @@ def get_sc2_documents_path() -> Path:
     return sc2_path
 
 
-def find_display_name_from_shortcuts(sc2_path: Path, handle: str) -> str | None:
-    """从快捷方式反推显示名称"""
-    # 遍历 StarCraft II 根目录下的所有 .lnk 文件
-    for item in sc2_path.iterdir():
-        if item.is_file() and item.suffix == ".lnk":
-            # 解析快捷方式目标
-            target_path = resolve_shortcut(item)
-            if target_path:
-                # 检查目标路径是否包含这个 handle
-                if handle in str(target_path):
-                    # 快捷方式的名称就是用户的显示名称
-                    display_name = item.stem  # 不带 .lnk 扩展名
-                    return display_name
-    return None
-
-
 def scan_accounts() -> list[Account]:
     """扫描所有国服账号"""
     sc2_path = get_sc2_documents_path()
@@ -139,28 +122,9 @@ def scan_accounts() -> list[Account]:
                 
                 # 检查是否有需要迁移的旧存档
                 if account.has_old_banks():
-                    # 尝试从快捷方式反推显示名称
-                    account.display_name = find_display_name_from_shortcuts(sc2_path, handle)
                     accounts.append(account)
     
     return accounts
-
-
-def resolve_shortcut(shortcut_path: Path) -> Path | None:
-    """解析 Windows 快捷方式"""
-    try:
-        import win32com.client  # pyright: ignore[reportMissingModuleSource]
-        # pywin32 的类型定义不完整，使用 Any 类型避免类型检查警告
-        shell = win32com.client.Dispatch("WScript.Shell")
-        shortcut = shell.CreateShortCut(str(shortcut_path))
-        target: str | None = getattr(shortcut, "Targetpath", None)
-        return Path(target) if target else None
-    except ImportError:
-        # pywin32 未安装，跳过快捷方式解析
-        return None
-    except Exception:
-        # 解析失败，跳过
-        return None
 
 
 def display_accounts(accounts: list[Account]) -> None:
@@ -168,12 +132,7 @@ def display_accounts(accounts: list[Account]) -> None:
     print(f"找到 {len(accounts)} 个需要迁移的账号:\n")
     
     for i, account in enumerate(accounts, 1):
-        display = f"{i}. Handle: {account.handle}"
-        if account.display_name:
-            display += f" | 名称: {account.display_name}"
-        print(display)
-        
-        # 显示战网 ID
+        print(f"{i}. 句柄: {account.handle}")
         print(f"   战网 ID: {account.battle_net_id}")
         
         # 显示可迁移的文件数量
@@ -272,8 +231,6 @@ def migrate_account(account: Account) -> bool:
     """迁移账号的存档"""
     print(f"\n{'='*60}")
     print(f"开始迁移账号: {account.handle}")
-    if account.display_name:
-        print(f"名称: {account.display_name}")
     print(f"{'='*60}\n")
     
     # 获取可迁移的文件
